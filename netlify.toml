@@ -8,5 +8,5 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
     X-Content-Type-Options = "nosniff"
+    Content-Security-Policy = "frame-ancestors 'self' https://essentialslondon.com https://*.myshopify.com https://*.netlify.app"
