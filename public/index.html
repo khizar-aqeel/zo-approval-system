@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ZO® Consultation Form</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: #f9f9f9;
+      color: #333;
+      padding: 30px 15px;
+    }
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 40px;
+      border: 1px solid #e0e0e0;
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .logo img {
+      max-width: 160px;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: #777;
+      margin-bottom: 35px;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 8px;
+      margin: 30px 0 18px;
+      color: #111;
+    }
+    .form-row {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 16px;
+    }
+    .form-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="date"],
+    textarea,
+    select {
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      font-size: 14px;
+      width: 100%;
+      background: #fff;
+      outline: none;
+      transition: border 0.2s;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: #000;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    .radio-group {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      padding: 8px 0;
+    }
+    .radio-group label {
+      font-size: 13px;
+      font-weight: normal;
+      text-transform: none;
+      letter-spacing: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .screening-item {
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      background: #fafafa;
+      border: 1px solid #eee;
+    }
+    .screening-item p {
+      font-size: 13px;
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .allergies-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .allergy-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+    .procedures-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .procedure-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+    .consent-box {
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .consent-box label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: normal;
+      text-transform: none;
+      letter-spacing: 0;
+      cursor: pointer;
+      line-height: 1.5;
+    }
+    .consent-box input[type="checkbox"] {
+      margin-top: 2px;
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+    }
+    .photo-upload {
+      border: 2px dashed #ddd;
+      padding: 25px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .photo-upload:hover { border-color: #000; }
+    .photo-upload p { font-size: 13px; color: #888; margin-top: 6px; }
+    .notice {
+      background: #fff8e1;
+      border-left: 3px solid #f9a825;
+      padding: 12px 15px;
+      font-size: 12px;
+      color: #555;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .submit-btn {
+      width: 100%;
+      background: #000;
+      color: #fff;
+      border: none;
+      padding: 15px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 10px;
+    }
+    .submit-btn:hover { background: #333; }
+    .submit-btn:disabled { background: #aaa; cursor: not-allowed; }
+    .success-msg {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .success-msg h2 { font-size: 22px; margin-bottom: 10px; }
+    .success-msg p { color: #777; font-size: 14px; }
+    .error-msg {
+      color: red;
+      font-size: 12px;
+      text-align: center;
+      margin-top: 10px;
+      display: none;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 25px 20px; }
+      .form-row { flex-direction: column; gap: 0; }
+      .allergies-grid, .procedures-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">
+    <img src="https://essentialslondon.com/cdn/shop/files/essentials-london-logo.png" alt="Essentials London" onerror="this.style.display='none'"/>
+  </div>
+
+  <h1>ZO® Product Access & Consultation Form</h1>
+  <p class="subtitle">Complete this form to gain access to purchase ZO® products. All submissions are reviewed by our team.</p>
+
+  <div id="formWrapper">
+    <!-- Personal Details -->
+    <div class="section-title">Personal Details</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>First Name *</label>
+        <input type="text" id="firstName" required />
+      </div>
+      <div class="form-group">
+        <label>Last Name *</label>
+        <input type="text" id="lastName" required />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Date of Birth *</label>
+        <input type="date" id="dob" required />
+      </div>
+      <div class="form-group">
+        <label>Email Address *</label>
+        <input type="email" id="email" required />
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Address *</label>
+      <textarea id="address" rows="2" required></textarea>
+    </div>
+
+    <!-- Medical & Skin Info -->
+    <div class="section-title">Medical & Skin Information</div>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Any Relevant Medical Conditions</label>
+      <textarea id="medicalConditions" placeholder="Enter any relevant conditions, or write 'None'"></textarea>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Allergies</label>
+      <textarea id="allergies" placeholder="List any known allergies, or write 'None'"></textarea>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Are you pregnant or breastfeeding? *</label>
+      <div class="radio-group">
+        <label><input type="radio" name="pregnant" value="Yes" required /> Yes</label>
+        <label><input type="radio" name="pregnant" value="No" /> No</label>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Which skincare products are you currently using?</label>
+      <textarea id="currentProducts" placeholder="List your current skincare products"></textarea>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Have you ever experienced skin sensitivity? *</label>
+      <div class="radio-group">
+        <label><input type="radio" name="skinSensitivity" value="Yes" required /> Yes</label>
+        <label><input type="radio" name="skinSensitivity" value="No" /> No</label>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Have you used ZO® products before? *</label>
+      <div class="radio-group">
+        <label><input type="radio" name="usedZO" value="Yes" required /> Yes</label>
+        <label><input type="radio" name="usedZO" value="No" /> No</label>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label>What are your skincare goals?</label>
+      <textarea id="skincareGoals" placeholder="Describe your skincare goals"></textarea>
+    </div>
+
+    <!-- Photo Upload -->
+    <div class="section-title">Photo Upload</div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Recent Full Headshot Photograph *</label>
+      <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
+        <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="handlePhotoChange(this)" />
+        <div id="photoLabel">📷 Click to upload photo</div>
+        <p>JPG, PNG or WEBP — max 5MB</p>
+      </div>
+    </div>
+
+    <!-- Screening Questions -->
+    <div class="section-title">Important Screening Questions</div>
+    <div class="notice">⚠️ If you answer YES to any question below, our team will review your form before approval.</div>
+
+    <div class="screening-item">
+      <p>Have you used Accutane® or any prescription retinoid products (Retin-A®, Renova®) within the last 3 months?</p>
+      <div class="radio-group">
+        <label><input type="radio" name="accutane" value="Yes" required /> Yes</label>
+        <label><input type="radio" name="accutane" value="No" /> No</label>
+      </div>
+    </div>
+
+    <div class="screening-item">
+      <p>Have you used products containing retinol within the past week?</p>
+      <div class="radio-group">
+        <label><input type="radio" name="retinol" value="Yes" required /> Yes</label>
+        <label><input type="radio" name="retinol" value="No" /> No</label>
+      </div>
+    </div>
+
+    <div class="screening-item">
+      <p>Are you allergic or sensitive to aspirin?</p>
+      <div class="radio-group">
+        <label><input type="radio" name="aspirin" value="Yes" required /> Yes</label>
+        <label><input type="radio" name="aspirin" value="No" /> No</label>
+      </div>
+    </div>
+
+    <div class="screening-item">
+      <p>Are you currently undergoing radiation or chemotherapy?</p>
+      <div class="radio-group">
+        <label><input type="radio" name="chemo" value="Yes" required /> Yes</label>
+        <label><input type="radio" name="chemo" value="No" /> No</label>
+      </div>
+    </div>
+
+    <div class="screening-item">
+      <p>Do you have herpes or cold sores?</p>
+      <div class="radio-group">
+        <label><input type="radio" name="herpes" value="Yes" required /> Yes</label>
+        <label><input type="radio" name="herpes" value="No" /> No</label>
+      </div>
+    </div>
+
+    <div class="screening-item">
+      <p>Within the last week, have you had facial waxing, electrolysis, or used depilatory products?</p>
+      <div class="radio-group">
+        <label><input type="radio" name="waxing" value="Yes" required /> Yes</label>
+        <label><input type="radio" name="waxing" value="No" /> No</label>
+      </div>
+    </div>
+
+    <div class="screening-item">
+      <p>Do you have any autoimmune condition (including diabetes, lupus, etc.)?</p>
+      <div class="radio-group">
+        <label><input type="radio" name="autoimmune" value="Yes" required /> Yes</label>
+        <label><input type="radio" name="autoimmune" value="No" /> No</label>
+      </div>
+    </div>
+
+    <div class="screening-item">
+      <p>Do you have any sensitivity or allergy to any of the following?</p>
+      <div class="allergies-grid">
+        <label class="allergy-item"><input type="checkbox" name="allergyLactic" /> Lactic Acid</label>
+        <label class="allergy-item"><input type="checkbox" name="allergyCitric" /> Citric Acid</label>
+        <label class="allergy-item"><input type="checkbox" name="allergySalicylic" /> Salicylic Acid</label>
+        <label class="allergy-item"><input type="checkbox" name="allergyRetinol" /> Retinol (Vitamin A)</label>
+        <label class="allergy-item"><input type="checkbox" name="allergyLatex" /> Latex</label>
+      </div>
+    </div>
+
+    <div class="screening-item">
+      <p>Have you had facial cosmetic procedures within the last month?</p>
+      <div class="procedures-grid">
+        <label class="procedure-item"><input type="checkbox" name="procLaser" /> Laser resurfacing</label>
+        <label class="procedure-item"><input type="checkbox" name="procDerm" /> Dermabrasion</label>
+        <label class="procedure-item"><input type="checkbox" name="procPeel" /> Chemical peel</label>
+        <label class="procedure-item"><input type="checkbox" name="procFacelift" /> Facelift</label>
+        <label class="procedure-item"><input type="checkbox" name="procBleph" /> Blepharoplasty</label>
+        <label class="procedure-item"><input type="checkbox" name="procBotox" /> Botox®</label>
+        <label class="procedure-item"><input type="checkbox" name="procFillers" /> Injectable fillers</label>
+      </div>
+    </div>
+
+    <!-- Consent -->
+    <div class="section-title">Patient Consent</div>
+
+    <div class="consent-box">
+      <label>
+        <input type="checkbox" id="consent1" required />
+        I confirm that, to the best of my knowledge, the information provided is accurate and complete. I understand that I must not withhold relevant medical or skincare information for the safe use of ZO® products. I also understand that results cannot be guaranteed.
+      </label>
+    </div>
+
+    <div class="consent-box">
+      <label>
+        <input type="checkbox" id="consent2" required />
+        I confirm that I am over 18 years of age.
+      </label>
+    </div>
+
+    <button class="submit-btn" id="submitBtn" onclick="submitForm()">Submit Application</button>
+    <div class="error-msg" id="errorMsg">Please fill in all required fields before submitting.</div>
+  </div>
+
+  <div class="success-msg" id="successMsg">
+    <h2>✅ Application Submitted!</h2>
+    <p>Thank you. Our team will review your application and you'll receive an email once approved.<br/><br/>You can then log in to <strong>essentialslondon.com</strong> and purchase ZO® products.</p>
+  </div>
+</div>
+
+<script>
+  let photoBase64 = null;
+
+  function handlePhotoChange(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Photo must be under 5MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      photoBase64 = e.target.result;
+      document.getElementById('photoLabel').textContent = '✅ ' + file.name;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function getRadio(name) {
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    return el ? el.value : null;
+  }
+
+  function getCheckbox(name) {
+    const el = document.querySelector(`input[name="${name}"]`);
+    return el && el.checked ? 'Yes' : 'No';
+  }
+
+  async function submitForm() {
+    const btn = document.getElementById('submitBtn');
+    const errorMsg = document.getElementById('errorMsg');
+    errorMsg.style.display = 'none';
+
+    // Validate required fields
+    const required = [
+      document.getElementById('firstName').value.trim(),
+      document.getElementById('lastName').value.trim(),
+      document.getElementById('dob').value.trim(),
+      document.getElementById('email').value.trim(),
+      document.getElementById('address').value.trim(),
+      getRadio('pregnant'),
+      getRadio('skinSensitivity'),
+      getRadio('usedZO'),
+      getRadio('accutane'),
+      getRadio('retinol'),
+      getRadio('aspirin'),
+      getRadio('chemo'),
+      getRadio('herpes'),
+      getRadio('waxing'),
+      getRadio('autoimmune'),
+    ];
+
+    if (required.some(v => !v) || !document.getElementById('consent1').checked || !document.getElementById('consent2').checked) {
+      errorMsg.style.display = 'block';
+      return;
+    }
+
+    if (!photoBase64) {
+      errorMsg.textContent = 'Please upload a headshot photograph.';
+      errorMsg.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    const payload = {
+      firstName: document.getElementById('firstName').value.trim(),
+      lastName: document.getElementById('lastName').value.trim(),
+      dob: document.getElementById('dob').value,
+      email: document.getElementById('email').value.trim(),
+      address: document.getElementById('address').value.trim(),
+      medicalConditions: document.getElementById('medicalConditions').value.trim() || 'None',
+      allergies: document.getElementById('allergies').value.trim() || 'None',
+      pregnant: getRadio('pregnant'),
+      currentProducts: document.getElementById('currentProducts').value.trim() || 'None',
+      skinSensitivity: getRadio('skinSensitivity'),
+      usedZO: getRadio('usedZO'),
+      skincareGoals: document.getElementById('skincareGoals').value.trim() || 'None',
+      photo: photoBase64,
+      screening: {
+        accutane: getRadio('accutane'),
+        retinol: getRadio('retinol'),
+        aspirin: getRadio('aspirin'),
+        chemo: getRadio('chemo'),
+        herpes: getRadio('herpes'),
+        waxing: getRadio('waxing'),
+        autoimmune: getRadio('autoimmune'),
+        allergies: {
+          lacticAcid: getCheckbox('allergyLactic'),
+          citricAcid: getCheckbox('allergyCitric'),
+          salicylicAcid: getCheckbox('allergySalicylic'),
+          retinol: getCheckbox('allergyRetinol'),
+          latex: getCheckbox('allergyLatex'),
+        },
+        procedures: {
+          laserResurfacing: getCheckbox('procLaser'),
+          dermabrasion: getCheckbox('procDerm'),
+          chemicalPeel: getCheckbox('procPeel'),
+          facelift: getCheckbox('procFacelift'),
+          blepharoplasty: getCheckbox('procBleph'),
+          botox: getCheckbox('procBotox'),
+          injectableFillers: getCheckbox('procFillers'),
+        }
+      }
+    };
+
+    try {
+      const res = await fetch('/.netlify/functions/submit-form', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        document.getElementById('formWrapper').style.display = 'none';
+        document.getElementById('successMsg').style.display = 'block';
+      } else {
+        throw new Error('Server error');
+      }
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = 'Submit Application';
+      errorMsg.textContent = 'Something went wrong. Please try again.';
+      errorMsg.style.display = 'block';
+    }
+  }
+</script>
+</body>
+</html>

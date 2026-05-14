@@ -1,0 +1,8 @@
+{
+  "name": "zo-approval-system",
+  "version": "1.0.0",
+  "description": "ZO Product Approval System for Essentials London",
+  "dependencies": {
+    "nodemailer": "^6.9.9"
+  }
+}
