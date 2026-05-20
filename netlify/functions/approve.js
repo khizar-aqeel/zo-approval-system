@@ -9,25 +9,44 @@ exports.handler = async (event) => {
     };
   }
 
-  const SHOPIFY_STORE = process.env.SHOPIFY_STORE; // e.g. essentials-london.myshopify.com
-  const SHOPIFY_TOKEN = process.env.SHOPIFY_TOKEN;  // Admin API access token
+  const SHOPIFY_STORE = process.env.SHOPIFY_STORE;
+  const SHOPIFY_TOKEN = process.env.SHOPIFY_TOKEN;
 
-  try {
-    // Step 1: Find customer by email
-    const searchRes = await fetch(
-      `https://${SHOPIFY_STORE}/admin/api/2024-01/customers/search.json?query=email:${encodeURIComponent(email)}`,
+  // GraphQL helper
+  async function shopifyGraphQL(query, variables = {}) {
+    const res = await fetch(
+      `https://${SHOPIFY_STORE}/admin/api/2026-04/graphql.json`,
       {
+        method: 'POST',
         headers: {
           'X-Shopify-Access-Token': SHOPIFY_TOKEN,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ query, variables })
       }
     );
+    return res.json();
+  }
 
-    const searchData = await searchRes.json();
-    const customers = searchData.customers;
+  try {
+    // Step 1: Find customer by email
+    const searchResult = await shopifyGraphQL(`
+      query getCustomer($query: String!) {
+        customers(first: 1, query: $query) {
+          edges {
+            node {
+              id
+              email
+              tags
+            }
+          }
+        }
+      }
+    `, { query: `email:${email}` });
 
-    if (!customers || customers.length === 0) {
+    const edges = searchResult?.data?.customers?.edges;
+
+    if (!edges || edges.length === 0) {
       return {
         statusCode: 404,
         headers: { 'Content-Type': 'text/html' },
@@ -36,32 +55,34 @@ exports.handler = async (event) => {
             <h2>⚠️ Customer Not Found</h2>
             <p>No Shopify account found for <strong>${email}</strong></p>
             <p style="color:#777;font-size:13px">The customer must create an account on essentialslondon.com first.</p>
+            ${searchResult?.errors ? `<p style="color:red;font-size:11px">API Error: ${JSON.stringify(searchResult.errors)}</p>` : ''}
           </body></html>`
       };
     }
 
-    const customer = customers[0];
-    const currentTags = customer.tags ? customer.tags.split(', ').filter(Boolean) : [];
+    const customer = edges[0].node;
+    const currentTags = customer.tags || [];
 
     if (action === 'approve') {
-      // Add zo_approved tag
-      if (!currentTags.includes('zo_approved')) {
-        currentTags.push('zo_approved');
-      }
-      // Remove zo_disapproved if exists
       const newTags = currentTags.filter(t => t !== 'zo_disapproved');
+      if (!newTags.includes('zo_approved')) {
+        newTags.push('zo_approved');
+      }
 
-      await fetch(
-        `https://${SHOPIFY_STORE}/admin/api/2024-01/customers/${customer.id}.json`,
-        {
-          method: 'PUT',
-          headers: {
-            'X-Shopify-Access-Token': SHOPIFY_TOKEN,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ customer: { id: customer.id, tags: [...newTags, 'zo_approved'].join(', ') } })
+      await shopifyGraphQL(`
+        mutation updateCustomer($input: CustomerInput!) {
+          customerUpdate(input: $input) {
+            customer {
+              id
+              tags
+            }
+            userErrors {
+              field
+              message
+            }
+          }
         }
-      );
+      `, { input: { id: customer.id, tags: newTags } });
 
       return {
         statusCode: 200,
@@ -74,30 +95,31 @@ exports.handler = async (event) => {
             <p style="color:#777;font-size:13px">Tag <code>zo_approved</code> has been added to their Shopify account.<br/>They can now purchase ZO® products on essentialslondon.com.</p>
             <div style="margin-top:30px;padding:15px;background:#f9f9f9;border:1px solid #eee;font-size:13px">
               <strong>Customer:</strong> ${name}<br/>
-              <strong>Email:</strong> ${email}<br/>
-              <strong>Shopify ID:</strong> ${customer.id}
+              <strong>Email:</strong> ${email}
             </div>
           </body></html>`
       };
 
     } else if (action === 'disapprove') {
-      // Remove zo_approved, add zo_disapproved
       const newTags = currentTags.filter(t => t !== 'zo_approved');
       if (!newTags.includes('zo_disapproved')) {
         newTags.push('zo_disapproved');
       }
 
-      await fetch(
-        `https://${SHOPIFY_STORE}/admin/api/2024-01/customers/${customer.id}.json`,
-        {
-          method: 'PUT',
-          headers: {
-            'X-Shopify-Access-Token': SHOPIFY_TOKEN,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ customer: { id: customer.id, tags: newTags.join(', ') } })
+      await shopifyGraphQL(`
+        mutation updateCustomer($input: CustomerInput!) {
+          customerUpdate(input: $input) {
+            customer {
+              id
+              tags
+            }
+            userErrors {
+              field
+              message
+            }
+          }
         }
-      );
+      `, { input: { id: customer.id, tags: newTags } });
 
       return {
         statusCode: 200,
@@ -107,11 +129,10 @@ exports.handler = async (event) => {
             <div style="font-size:60px;margin-bottom:20px">❌</div>
             <h2 style="color:#c0392b">Disapproved</h2>
             <p><strong>${name || email}</strong> has been disapproved for ZO® products.</p>
-            <p style="color:#777;font-size:13px">Tag <code>zo_disapproved</code> has been added to their Shopify account.<br/>They will not be able to purchase ZO® products.</p>
+            <p style="color:#777;font-size:13px">Tag <code>zo_disapproved</code> has been added to their Shopify account.</p>
             <div style="margin-top:30px;padding:15px;background:#f9f9f9;border:1px solid #eee;font-size:13px">
               <strong>Customer:</strong> ${name}<br/>
-              <strong>Email:</strong> ${email}<br/>
-              <strong>Shopify ID:</strong> ${customer.id}
+              <strong>Email:</strong> ${email}
             </div>
           </body></html>`
       };
