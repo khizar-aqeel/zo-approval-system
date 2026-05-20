@@ -10,43 +10,45 @@ exports.handler = async (event) => {
   }
 
   const SHOPIFY_STORE = process.env.SHOPIFY_STORE;
-  const SHOPIFY_TOKEN = process.env.SHOPIFY_TOKEN;
-
-  // GraphQL helper
-  async function shopifyGraphQL(query, variables = {}) {
-    const res = await fetch(
-      `https://${SHOPIFY_STORE}/admin/api/2026-04/graphql.json`,
-      {
-        method: 'POST',
-        headers: {
-          'X-Shopify-Access-Token': SHOPIFY_TOKEN,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ query, variables })
-      }
-    );
-    return res.json();
-  }
+  const CLIENT_ID = process.env.SHOPIFY_CLIENT_ID;
+  const CLIENT_SECRET = process.env.SHOPIFY_CLIENT_SECRET;
 
   try {
-    // Step 1: Find customer by email
-    const searchResult = await shopifyGraphQL(`
-      query getCustomer($query: String!) {
-        customers(first: 1, query: $query) {
-          edges {
-            node {
-              id
-              email
-              tags
-            }
-          }
+    // Step 1: Get access token using Client Credentials
+    const tokenRes = await fetch(
+      `https://${SHOPIFY_STORE}/admin/oauth/access_token`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: CLIENT_ID,
+          client_secret: CLIENT_SECRET,
+          grant_type: 'client_credentials'
+        })
+      }
+    );
+    const tokenData = await tokenRes.json();
+    const accessToken = tokenData.access_token;
+
+    if (!accessToken) {
+      throw new Error('Could not get access token: ' + JSON.stringify(tokenData));
+    }
+
+    // Step 2: Find customer by email
+    const searchRes = await fetch(
+      `https://${SHOPIFY_STORE}/admin/api/2026-04/customers/search.json?query=email:${encodeURIComponent(email)}`,
+      {
+        headers: {
+          'X-Shopify-Access-Token': accessToken,
+          'Content-Type': 'application/json'
         }
       }
-    `, { query: `email:${email}` });
+    );
 
-    const edges = searchResult?.data?.customers?.edges;
+    const searchData = await searchRes.json();
+    const customers = searchData.customers;
 
-    if (!edges || edges.length === 0) {
+    if (!customers || customers.length === 0) {
       return {
         statusCode: 404,
         headers: { 'Content-Type': 'text/html' },
@@ -55,34 +57,28 @@ exports.handler = async (event) => {
             <h2>⚠️ Customer Not Found</h2>
             <p>No Shopify account found for <strong>${email}</strong></p>
             <p style="color:#777;font-size:13px">The customer must create an account on essentialslondon.com first.</p>
-            ${searchResult?.errors ? `<p style="color:red;font-size:11px">API Error: ${JSON.stringify(searchResult.errors)}</p>` : ''}
           </body></html>`
       };
     }
 
-    const customer = edges[0].node;
-    const currentTags = customer.tags || [];
+    const customer = customers[0];
+    const currentTags = customer.tags ? customer.tags.split(', ').filter(Boolean) : [];
 
     if (action === 'approve') {
       const newTags = currentTags.filter(t => t !== 'zo_disapproved');
-      if (!newTags.includes('zo_approved')) {
-        newTags.push('zo_approved');
-      }
+      if (!newTags.includes('zo_approved')) newTags.push('zo_approved');
 
-      await shopifyGraphQL(`
-        mutation updateCustomer($input: CustomerInput!) {
-          customerUpdate(input: $input) {
-            customer {
-              id
-              tags
-            }
-            userErrors {
-              field
-              message
-            }
-          }
+      await fetch(
+        `https://${SHOPIFY_STORE}/admin/api/2026-04/customers/${customer.id}.json`,
+        {
+          method: 'PUT',
+          headers: {
+            'X-Shopify-Access-Token': accessToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ customer: { id: customer.id, tags: newTags.join(', ') } })
         }
-      `, { input: { id: customer.id, tags: newTags } });
+      );
 
       return {
         statusCode: 200,
@@ -102,24 +98,19 @@ exports.handler = async (event) => {
 
     } else if (action === 'disapprove') {
       const newTags = currentTags.filter(t => t !== 'zo_approved');
-      if (!newTags.includes('zo_disapproved')) {
-        newTags.push('zo_disapproved');
-      }
+      if (!newTags.includes('zo_disapproved')) newTags.push('zo_disapproved');
 
-      await shopifyGraphQL(`
-        mutation updateCustomer($input: CustomerInput!) {
-          customerUpdate(input: $input) {
-            customer {
-              id
-              tags
-            }
-            userErrors {
-              field
-              message
-            }
-          }
+      await fetch(
+        `https://${SHOPIFY_STORE}/admin/api/2026-04/customers/${customer.id}.json`,
+        {
+          method: 'PUT',
+          headers: {
+            'X-Shopify-Access-Token': accessToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ customer: { id: customer.id, tags: newTags.join(', ') } })
         }
-      `, { input: { id: customer.id, tags: newTags } });
+      );
 
       return {
         statusCode: 200,
@@ -129,7 +120,7 @@ exports.handler = async (event) => {
             <div style="font-size:60px;margin-bottom:20px">❌</div>
             <h2 style="color:#c0392b">Disapproved</h2>
             <p><strong>${name || email}</strong> has been disapproved for ZO® products.</p>
-            <p style="color:#777;font-size:13px">Tag <code>zo_disapproved</code> has been added to their Shopify account.</p>
+            <p style="color:#777;font-size:13px">Tag <code>zo_disapproved</code> has been added.</p>
             <div style="margin-top:30px;padding:15px;background:#f9f9f9;border:1px solid #eee;font-size:13px">
               <strong>Customer:</strong> ${name}<br/>
               <strong>Email:</strong> ${email}
@@ -139,7 +130,7 @@ exports.handler = async (event) => {
     }
 
   } catch (err) {
-    console.error('Shopify error:', err);
+    console.error('Error:', err);
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'text/html' },
