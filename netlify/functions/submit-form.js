@@ -17,7 +17,7 @@ exports.handler = async (event) => {
   const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587');
   const SMTP_USER = process.env.SMTP_USER;
   const SMTP_PASS = process.env.SMTP_PASS;
-  const BASE_URL = process.env.URL || 'https://your-site.netlify.app';
+  const BASE_URL = process.env.SITE_URL || process.env.URL || 'https://zoform.netlify.app';
 
   // Build approve/disapprove URLs
   const approveUrl = `${BASE_URL}/.netlify/functions/approve?email=${encodeURIComponent(data.email)}&action=approve&name=${encodeURIComponent(data.firstName + ' ' + data.lastName)}`;
